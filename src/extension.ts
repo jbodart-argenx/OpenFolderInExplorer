@@ -1,10 +1,40 @@
+'use strict';
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as os from 'os';
+//import * as escapeStringRegexp from 'escape-string-regexp';
+//import escapeStringRegexp from 'escape-string-regexp';
+//import { default as escapeStringRegexp } from 'escape-string-regexp';
+import fs = require('fs');
+import path = require('path');
+//import escapeRegExp = require('escape-string-regexp');
+//let escapeRegExp =require('escape-string-regexp');
+//import escapeStringRegexp from 'escape-string-regexp';
+
+
+			
 
 let NEXT_TERM_ID = 1;
+const platform = os.platform();
+const userHomeDir = os.homedir();
+const lsafJsonPath = os.homedir()+path.sep+".lsaf"+path.sep+"lsaf.json";
+
+function LsafLocalRootFolder() {
+	if (fs.existsSync(lsafJsonPath)) {
+		//let rawData = fs.readFileSync(lsafJsonPath);
+		//let lsaf_path = JSON.parse(rawData).localRootFolder;
+		let lsaf_path = require(lsafJsonPath).localRootFolder;
+		console.log('LSAF local Root Folder: '+lsaf_path);
+		return lsaf_path;
+	} else {
+		return ".";
+	}
+}
 
 export function activate(context: vscode.ExtensionContext) {
+	
+	
+	
 	context.subscriptions.push(
 		vscode.commands.registerCommand('extension.openFolderInExplorer', (uri: vscode.Uri) => {
 			const platform = os.platform();
@@ -26,7 +56,46 @@ export function activate(context: vscode.ExtensionContext) {
 			cp.execSync(`${command} "${uri.fsPath}"`);
 		}),
 		vscode.commands.registerCommand('extension.echoPath', (uri: vscode.Uri) => {
+			//function escapeRegExp(str: string) {
+			//	return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+			//}
+			function escapeRegExp(string: string){
+				return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			  }
+			//let RegexEscape = require("regex-escape");
 			console.log("Path: "+uri.fsPath);
+			let ux_path = uri.fsPath.replace(/\\/g, "/",);
+			console.log("ux_path: "+ux_path);			
+			let LsafLRF = LsafLocalRootFolder();
+			console.log("LsafLRF = "+LsafLRF);
+			//let escLsafLRF =  escapeRegExp(LsafLRF);
+			//let escLsafLRF =  escapeStringRegexp(LsafLRF);
+			//let escLsafLRF =  RegexEscape(LsafLRF);
+			//console.log("escLsafLRF = "+escLsafLRF.valueOf);
+			//let lsafLRF_pattern = new RegExp("^"+escLsafLRF, 'i');
+
+			//let lsafLRF_pattern = new RegExp("^"+LsafLRF, 'i');
+			//const escrx = escapeStringRegexp.default(LsafLRF);
+			//const escrx = escapeRegExp(LsafLRF);
+			//var escrx = LsafLRF.replace(new RegExp("[-[{}()*+?.,^$|#]", "g"), "\\$&");
+			//var escrx = LsafLRF.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			var escrx = LsafLRF;
+			console.log("escrx: "+escrx);
+			let lsafLRF_pattern = new RegExp("^"+escrx, 'i');
+			//let lsafLRF_pattern = new RegExp("^"+(LsafLRF), 'i');
+			
+			//let lsafLRF_pattern = new RegExp("^"+escapeRegExp(LsafLRF), 'i');
+			//let lsafLRF_pattern = new RegExp("^c:/Users/jbodart/lsaf", 'i');
+			var lsaf_path = ux_path;
+			let is_matching = lsafLRF_pattern.test(ux_path);
+			console.log('is_matching: '+is_matching);
+			if (lsafLRF_pattern.test(ux_path)) {
+				lsaf_path = ux_path.replace(lsafLRF_pattern, "");
+				console.log("LSAF Path: "+ lsaf_path);			
+			} else {
+				console.error("Could not remove Lsaf Local Root Folder ("+LsafLRF+") from Unix Path: "+ux_path);
+			}
+			//lsaf_path = ux_path.replace(lsafLRF_pattern, "");
 			let command = "echo";
 			cp.execSync(`${command} "${uri.fsPath}"`); // shows no output
 
@@ -47,8 +116,10 @@ export function activate(context: vscode.ExtensionContext) {
 					term.dispose();
 				}
 			});
-			command = "echo "+uri.fsPath;
+			command = "echo Upload "+uri.fsPath+" to LSAF path: "+lsaf_path;
 			term.sendText(command);
+			console.log(lsaf_path);
+			vscode.window.showInformationMessage(lsaf_path);
 			vscode.window.showInformationMessage('Hello World 1!');
 			
 		}),
